@@ -1,8 +1,7 @@
 // Unified AI Portal — shared JS utilities
 
-const API = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  ? 'http://localhost:8000'
-  : 'https://lively-vibrancy-production-af74.up.railway.app';
+const API_BASE = 'https://lively-vibrancy-production-af74.up.railway.app';
+const API = API_BASE;
 
 function toggleAgent(slug) {
   const el = document.getElementById(`agent-${slug}`);
