@@ -3,7 +3,7 @@ import anthropic
 from typing import Optional
 
 client = anthropic.Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-MODEL = "claude-sonnet-4-20250514"
+MODEL = "claude-sonnet-4-5"
 
 
 def build_messages(history: list[dict], user_message: str) -> list[dict]:
