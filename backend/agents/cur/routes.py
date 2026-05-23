@@ -22,6 +22,48 @@ async def get_cur_agent(db: AsyncSession) -> Agent:
 
 # ── Reports ──────────────────────────────────────────────────────────────────
 
+@router.post("/reports/generate-sample", response_model=CurReportOut)
+async def generate_sample_cur_report(db: AsyncSession = Depends(get_db)):
+    """Generate a synthetic AWS CUR CSV and store it as a report."""
+    import io
+    import random
+    from datetime import date, timedelta
+
+    agent = await get_cur_agent(db)
+
+    services = [
+        "Amazon EC2", "Amazon RDS", "Amazon S3", "AWS Lambda",
+        "Amazon CloudFront", "Amazon DynamoDB", "AWS Glue",
+        "Amazon Redshift", "Amazon EKS", "Amazon SQS",
+    ]
+    regions = ["us-east-1", "us-west-2", "eu-west-1", "ap-southeast-1"]
+    rows = ["line_item_product_code,line_item_unblended_cost,line_item_usage_start_date,product_region"]
+    start = date(2024, 1, 1)
+    for i in range(300):
+        day = start + timedelta(days=random.randint(0, 89))
+        svc = random.choice(services)
+        cost = round(random.uniform(0.5, 500.0), 6)
+        region = random.choice(regions)
+        rows.append(f"{svc},{cost},{day},{region}")
+
+    content = "\n".join(rows)
+    file_size = len(content.encode("utf-8"))
+    summary = get_cost_summary(content)
+
+    report = CurReport(
+        agent_id=agent.id,
+        filename=f"sample-cur-{date.today().isoformat()}.csv",
+        file_content=content,
+        row_count=summary.get("row_count", 300),
+        file_size=file_size,
+        status="ready",
+    )
+    db.add(report)
+    await db.commit()
+    await db.refresh(report)
+    return report
+
+
 @router.post("/reports/upload", response_model=CurReportOut)
 async def upload_cur_report(file: UploadFile = File(...), db: AsyncSession = Depends(get_db)):
     agent = await get_cur_agent(db)
