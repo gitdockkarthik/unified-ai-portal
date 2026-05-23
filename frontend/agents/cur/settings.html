@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CUR Settings — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="../alerts/chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="../alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../alerts/reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="../alerts/settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> CUR Analyser <span>›</span> Settings</div>
+      <h1 class="page-title">⚙️ CUR Settings</h1>
+      <p class="page-subtitle">Configure data source and integrations for CUR Analyser</p>
+    </div>
+
+    <div class="settings-grid">
+      <!-- Phase 1: File Upload (active) -->
+      <div class="card">
+        <div class="settings-section-title">Phase 1 — Data Source</div>
+        <div class="form-group">
+          <label class="form-label">Data Source</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" name="dataSource" id="srcFile" value="file" checked />
+              <label for="srcFile">📁 File Upload (Active)</label>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-top:8px">
+          Upload CUR CSV files directly from the <a href="reports.html" style="color:#4F8EF7">Reports page</a>. Supports standard AWS Cost & Usage Report CSV exports.
+        </p>
+        <button class="btn btn-primary" style="margin-top:16px" onclick="saveSettings()">Save Settings</button>
+      </div>
+
+      <!-- Phase 2: Live Feed (coming soon) -->
+      <div class="card coming-soon">
+        <div class="settings-section-title">Phase 2 — Live Feed</div>
+        <div class="form-group">
+          <label class="form-label">Data Source</label>
+          <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="liveSrc" value="s3" disabled /><label>AWS S3 Bucket</label></div>
+            <div class="radio-option"><input type="radio" name="liveSrc" value="ce" disabled /><label>AWS Cost Explorer API</label></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">AWS Access Key ID</label>
+          <input type="text" class="form-input" placeholder="AKIA…" disabled />
+        </div>
+        <div class="form-group">
+          <label class="form-label">S3 Bucket URL</label>
+          <input type="text" class="form-input" placeholder="s3://my-cur-bucket/path" disabled />
+        </div>
+      </div>
+
+      <!-- Phase 3: Escalations (coming soon) -->
+      <div class="card coming-soon">
+        <div class="settings-section-title">Phase 3 — Escalations</div>
+        <div class="form-group">
+          <label class="form-label">Notification Channel</label>
+          <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="notifType" value="slack" disabled /><label>Slack Webhook</label></div>
+            <div class="radio-option"><input type="radio" name="notifType" value="teams" disabled /><label>Microsoft Teams</label></div>
+            <div class="radio-option"><input type="radio" name="notifType" value="email" disabled /><label>Email SMTP</label></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Webhook URL</label>
+          <input type="text" class="form-input" placeholder="https://hooks.slack.com/…" disabled />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Cost Threshold Alert</label>
+          <input type="number" class="form-input" placeholder="1000" disabled />
+          <div class="form-hint">Alert when daily cost exceeds this amount (USD)</div>
+        </div>
+      </div>
+
+      <!-- Agent Info -->
+      <div class="card">
+        <div class="settings-section-title">Agent Information</div>
+        <div id="agentInfo">
+          <div class="loading"><div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+async function loadSettings() {
+  try {
+    const r = await fetch(`${API}/api/cur/settings`);
+    const s = await r.json();
+    document.getElementById('agentInfo').innerHTML = `
+      <table style="width:100%;font-size:13px">
+        <tr><td style="padding:6px 0;color:#64748b">Data Source</td><td style="font-weight:600">${s.data_source}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Agent ID</td><td style="font-weight:600">${s.agent_id}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Last Updated</td><td style="font-weight:600">${formatDateTime(s.updated_at)}</td></tr>
+      </table>
+    `;
+  } catch(e) {
+    document.getElementById('agentInfo').innerHTML = `<p style="color:#dc2626;font-size:13px">Failed to load settings</p>`;
+  }
+}
+
+async function saveSettings() {
+  const dataSource = document.querySelector('input[name="dataSource"]:checked')?.value || 'file';
+  try {
+    await fetch(`${API}/api/cur/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_source: dataSource })
+    });
+    showToast('Settings saved', 'success');
+    loadSettings();
+  } catch(e) {
+    showToast('Save failed', 'error');
+  }
+}
+
+loadSettings();
+</script>
+</body>
+</html>

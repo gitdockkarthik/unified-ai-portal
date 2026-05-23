@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Reports — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="../cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> Alert Analyser <span>›</span> Reports</div>
+      <h1 class="page-title">🚨 Alert Reports</h1>
+      <p class="page-subtitle">Generate synthetic data or upload OpsGenie alert exports</p>
+    </div>
+
+    <!-- Actions -->
+    <div class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+      <div>
+        <div style="font-weight:700;margin-bottom:4px">Synthetic Data</div>
+        <p style="font-size:13px;color:#64748b;margin:0">Generate 200 realistic OpsGenie alerts with noise patterns</p>
+      </div>
+      <button class="btn btn-danger" id="generateBtn" onclick="generateData()" style="margin-left:auto">
+        ⚡ Generate Synthetic Alerts
+      </button>
+    </div>
+
+    <!-- Upload zone -->
+    <div class="card">
+      <div class="card-title">Upload OpsGenie Export</div>
+      <div class="upload-zone alert-upload" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">📤</div>
+        <div class="upload-title">Upload Alert JSON</div>
+        <div class="upload-sub">Click or drag & drop a JSON file exported from OpsGenie</div>
+        <input type="file" id="fileInput" accept=".json" style="display:none" onchange="uploadFile(this.files[0])" />
+      </div>
+    </div>
+
+    <!-- Reports table -->
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        Alert Reports
+        <button class="btn btn-secondary btn-sm" onclick="loadReports()">↻ Refresh</button>
+      </div>
+      <div id="reportsTable"><div class="loading"><div class="loading-spinner"></div></div></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) uploadFile(f);
+});
+
+async function generateData() {
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+  try {
+    const r = await fetch(`${API}/api/alerts/reports/generate`, { method: 'POST' });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    showToast(`Generated: ${data.total_alerts} alerts (${data.genuine_count} genuine, ${data.noise_count} noise)`, 'success');
+    loadReports();
+  } catch(e) {
+    showToast('Generation failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '⚡ Generate Synthetic Alerts';
+  }
+}
+
+async function uploadFile(file) {
+  if (!file) return;
+  const fd = new FormData();
+  fd.append('file', file);
+  showToast('Uploading…');
+  try {
+    const r = await fetch(`${API}/api/alerts/reports/upload`, { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    showToast(`Uploaded: ${data.total_alerts} alerts`, 'success');
+    loadReports();
+  } catch(e) {
+    showToast('Upload failed: ' + e.message, 'error');
+  }
+}
+
+async function loadReports() {
+  const el = document.getElementById('reportsTable');
+  el.innerHTML = spinnerHTML();
+  try {
+    const r = await fetch(`${API}/api/alerts/reports`);
+    const reports = await r.json();
+    if (!reports.length) {
+      el.innerHTML = emptyHTML('🚨', 'No reports yet', 'Generate synthetic data or upload an OpsGenie JSON export.');
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Filename</th>
+              <th>Total Alerts</th>
+              <th>Genuine</th>
+              <th>Noise</th>
+              <th>Noise %</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${reports.map(r => {
+              const noiseRate = r.total_alerts > 0 ? ((r.noise_count / r.total_alerts) * 100).toFixed(0) : 0;
+              return `
+                <tr>
+                  <td>${r.filename}</td>
+                  <td>${r.total_alerts}</td>
+                  <td><span style="color:#15803d;font-weight:600">${r.genuine_count}</span></td>
+                  <td><span style="color:#b91c1c;font-weight:600">${r.noise_count}</span></td>
+                  <td>${noiseRate}%</td>
+                  <td>${statusBadge(r.status)}</td>
+                  <td>${formatDateTime(r.created_at)}</td>
+                  <td>
+                    <a href="dashboard.html" class="btn btn-secondary btn-sm btn-icon" title="Dashboard">📊</a>
+                    <a href="chat.html" class="btn btn-secondary btn-sm btn-icon" title="Chat">💬</a>
+                    <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteReport(${r.id})" title="Delete">🗑️</button>
+                  </td>
+                </tr>
+              `;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = emptyHTML('⚠️', 'Failed to load', e.message);
+  }
+}
+
+async function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  try {
+    await fetch(`${API}/api/alerts/reports/${id}`, { method: 'DELETE' });
+    showToast('Report deleted', 'success');
+    loadReports();
+  } catch(e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+loadReports();
+</script>
+</body>
+</html>

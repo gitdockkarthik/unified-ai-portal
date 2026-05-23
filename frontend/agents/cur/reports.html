@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CUR Reports — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="../alerts/chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="../alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../alerts/reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="../alerts/settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> CUR Analyser <span>›</span> Reports</div>
+      <h1 class="page-title">💰 CUR Reports</h1>
+      <p class="page-subtitle">Upload and manage AWS Cost & Usage Report files</p>
+    </div>
+
+    <!-- Upload zone -->
+    <div class="card">
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('fileInput').click()">
+        <div class="upload-icon">☁️</div>
+        <div class="upload-title">Upload CUR File</div>
+        <div class="upload-sub">Click or drag & drop a CSV file exported from AWS Cost & Usage Reports</div>
+        <input type="file" id="fileInput" accept=".csv" style="display:none" onchange="uploadFile(this.files[0])" />
+      </div>
+      <div id="uploadProgress" style="margin-top:12px;display:none">
+        <div style="height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">
+          <div id="progressBar" style="height:100%;background:#4F8EF7;width:0%;transition:width 0.3s"></div>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-top:6px" id="uploadStatus">Uploading…</p>
+      </div>
+    </div>
+
+    <!-- Reports table -->
+    <div class="card">
+      <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+        Uploaded Reports
+        <button class="btn btn-secondary btn-sm" onclick="loadReports()">↻ Refresh</button>
+      </div>
+      <div id="reportsTable">
+        <div class="loading"><div class="loading-spinner"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+const uploadZone = document.getElementById('uploadZone');
+uploadZone.addEventListener('dragover', e => { e.preventDefault(); uploadZone.classList.add('drag-over'); });
+uploadZone.addEventListener('dragleave', () => uploadZone.classList.remove('drag-over'));
+uploadZone.addEventListener('drop', e => {
+  e.preventDefault(); uploadZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) uploadFile(f);
+});
+
+async function uploadFile(file) {
+  if (!file) return;
+  const prog = document.getElementById('uploadProgress');
+  const bar = document.getElementById('progressBar');
+  const status = document.getElementById('uploadStatus');
+  prog.style.display = 'block';
+  bar.style.width = '30%';
+  status.textContent = 'Uploading…';
+
+  const fd = new FormData();
+  fd.append('file', file);
+
+  try {
+    bar.style.width = '60%';
+    const r = await fetch(`${API}/api/cur/reports/upload`, { method: 'POST', body: fd });
+    if (!r.ok) throw new Error(await r.text());
+    const data = await r.json();
+    bar.style.width = '100%';
+    status.textContent = `✅ Uploaded: ${data.filename} (${data.row_count.toLocaleString()} rows)`;
+    showToast('Report uploaded successfully', 'success');
+    setTimeout(() => { prog.style.display = 'none'; bar.style.width = '0'; }, 2000);
+    loadReports();
+  } catch(e) {
+    bar.style.width = '0';
+    status.textContent = `❌ Upload failed: ${e.message}`;
+    showToast('Upload failed', 'error');
+  }
+}
+
+async function loadReports() {
+  const el = document.getElementById('reportsTable');
+  el.innerHTML = spinnerHTML();
+  try {
+    const r = await fetch(`${API}/api/cur/reports`);
+    const reports = await r.json();
+    if (!reports.length) {
+      el.innerHTML = emptyHTML('📁', 'No reports yet', 'Upload a CUR CSV file above to get started.');
+      return;
+    }
+    el.innerHTML = `
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Filename</th><th>Rows</th><th>Size</th><th>Status</th><th>Uploaded</th><th>Actions</th></tr></thead>
+          <tbody>
+            ${reports.map(r => `
+              <tr>
+                <td>${r.filename}</td>
+                <td>${(r.row_count||0).toLocaleString()}</td>
+                <td>${formatSize(r.file_size)}</td>
+                <td>${statusBadge(r.status)}</td>
+                <td>${formatDateTime(r.created_at)}</td>
+                <td>
+                  <a href="dashboard.html" class="btn btn-secondary btn-sm btn-icon" title="View Dashboard">📊</a>
+                  <a href="chat.html" class="btn btn-secondary btn-sm btn-icon" title="Open Chat">💬</a>
+                  <button class="btn btn-secondary btn-sm btn-icon" onclick="deleteReport(${r.id})" title="Delete">🗑️</button>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    `;
+  } catch(e) {
+    el.innerHTML = emptyHTML('⚠️', 'Failed to load reports', e.message);
+  }
+}
+
+function formatSize(bytes) {
+  if (!bytes) return '—';
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024*1024) return `${(bytes/1024).toFixed(1)} KB`;
+  return `${(bytes/1024/1024).toFixed(1)} MB`;
+}
+
+async function deleteReport(id) {
+  if (!confirm('Delete this report?')) return;
+  try {
+    await fetch(`${API}/api/cur/reports/${id}`, { method: 'DELETE' });
+    showToast('Report deleted', 'success');
+    loadReports();
+  } catch(e) {
+    showToast('Delete failed', 'error');
+  }
+}
+
+loadReports();
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Chatbot — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="../cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> Alert Analyser <span>›</span> Chatbot</div>
+      <h1 class="page-title">🚨 Alert Chatbot</h1>
+      <p class="page-subtitle">Ask questions about your alert data and noise patterns</p>
+    </div>
+
+    <div class="chat-layout">
+      <div class="chat-sidebar-panel">
+        <div class="chat-panel-header">📁 Data Source</div>
+        <div class="chat-report-selector">
+          <label>Active Report</label>
+          <select id="reportSelect">
+            <option value="">Latest report</option>
+          </select>
+        </div>
+        <div class="suggested-questions">
+          <div class="suggested-questions-title">Suggested Questions</div>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Which service generates the most noise?</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Show me genuine P1 alerts from this dataset</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">What time of day do most alerts fire?</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Which alerts always fire together?</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Suggest which alerts we should suppress</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">What is our noise-to-signal ratio?</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Which team has most unresolved alerts?</button>
+          <button class="sq-btn" onclick="sendSuggestion(this)">Are there new alert patterns this week?</button>
+        </div>
+      </div>
+
+      <div class="chat-panel">
+        <div class="chat-panel-header">
+          <span>💬</span> Chat
+          <button class="btn btn-secondary btn-sm" style="margin-left:auto" onclick="clearChat()">New Session</button>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+          <div class="message assistant">
+            <div class="message-bubble">🚨 Hello! I'm your alert noise analyst. Generate synthetic data or upload OpsGenie alerts and I'll help you identify noise patterns, genuine incidents, and suppression opportunities.</div>
+            <div class="message-time">Now</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="chatInput" placeholder="Ask about your alerts…" onkeydown="if(event.key==='Enter')sendMessage()" style="border-color:#DC3545" />
+          <button class="chat-send alert-send" id="sendBtn" onclick="sendMessage()">Send</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+let sessionId = null;
+
+async function loadReports() {
+  try {
+    const r = await fetch(`${API}/api/alerts/reports`);
+    const reports = await r.json();
+    const sel = document.getElementById('reportSelect');
+    reports.forEach(rpt => {
+      const opt = document.createElement('option');
+      opt.value = rpt.id;
+      opt.textContent = `${rpt.filename} (${rpt.total_alerts} alerts)`;
+      sel.appendChild(opt);
+    });
+  } catch(e) { console.error(e); }
+}
+
+function clearChat() {
+  sessionId = null;
+  document.getElementById('chatMessages').innerHTML = `<div class="message assistant"><div class="message-bubble">🚨 New session started! How can I help analyse your alerts?</div><div class="message-time">Now</div></div>`;
+}
+
+function sendSuggestion(btn) {
+  document.getElementById('chatInput').value = btn.textContent;
+  sendMessage();
+}
+
+function appendMessage(role, content, chartData) {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.className = `message ${role}`;
+
+  const bubble = document.createElement('div');
+  bubble.className = 'message-bubble';
+  bubble.textContent = content;
+  div.appendChild(bubble);
+
+  if (chartData && role === 'assistant') {
+    const chartWrap = document.createElement('div');
+    chartWrap.className = 'chart-in-chat';
+    const chartId = 'chart-' + Date.now();
+    chartWrap.innerHTML = `<canvas id="${chartId}" style="max-height:200px"></canvas>`;
+    div.appendChild(chartWrap);
+    setTimeout(() => {
+      const canvas = document.getElementById(chartId);
+      if (canvas) {
+        new Chart(canvas, {
+          type: chartData.type || 'bar',
+          data: {
+            labels: chartData.labels || [],
+            datasets: (chartData.datasets || []).map((ds, i) => ({
+              ...ds,
+              backgroundColor: ds.backgroundColor || CHART_COLORS[i % CHART_COLORS.length],
+              borderColor: ds.borderColor || CHART_COLORS[i % CHART_COLORS.length],
+              borderWidth: 2, tension: 0.4, fill: false,
+            }))
+          },
+          options: { responsive: true, plugins: { legend: { display: true } } }
+        });
+      }
+    }, 50);
+  }
+
+  const time = document.createElement('div');
+  time.className = 'message-time';
+  time.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  div.appendChild(time);
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function showTyping() {
+  const msgs = document.getElementById('chatMessages');
+  const div = document.createElement('div');
+  div.id = 'typing';
+  div.className = 'message assistant';
+  div.innerHTML = `<div class="message-bubble"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function removeTyping() { document.getElementById('typing')?.remove(); }
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  const reportId = document.getElementById('reportSelect').value || null;
+  input.value = '';
+  document.getElementById('sendBtn').disabled = true;
+
+  appendMessage('user', msg);
+  showTyping();
+  try {
+    const r = await fetch(`${API}/api/alerts/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: sessionId, message: msg, report_id: reportId ? parseInt(reportId) : null })
+    });
+    const data = await r.json();
+    removeTyping();
+    sessionId = data.session_id;
+    appendMessage('assistant', data.reply, data.chart_data);
+  } catch(e) {
+    removeTyping();
+    appendMessage('assistant', '⚠️ Error contacting server. Please check your connection.');
+  } finally {
+    document.getElementById('sendBtn').disabled = false;
+    input.focus();
+  }
+}
+
+loadReports();
+</script>
+</body>
+</html>

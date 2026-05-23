@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Dashboard — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="../cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> Alert Analyser <span>›</span> Dashboard</div>
+      <div style="display:flex;align-items:flex-start;justify-content:space-between">
+        <div>
+          <h1 class="page-title">🚨 Alert Dashboard</h1>
+          <p class="page-subtitle">OpsGenie alert noise detection and signal analysis</p>
+        </div>
+        <button class="btn btn-danger" onclick="generateAndLoad()">⚡ Generate Synthetic Data</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+      <button class="tab-btn alert-tab active" onclick="switchTab('overview', this)">📊 Overview</button>
+      <button class="tab-btn alert-tab" onclick="switchTab('noise', this)">🔇 Noise Analysis</button>
+      <button class="tab-btn alert-tab" onclick="switchTab('genuine', this)">✅ Genuine Alerts</button>
+      <button class="tab-btn alert-tab" onclick="switchTab('trends', this)">📈 Trend Analysis</button>
+    </div>
+
+    <div id="tab-overview" class="tab-panel active">
+      <div id="overviewContent"><div class="empty-state"><div class="empty-icon">🚨</div><div class="empty-title">No alert data loaded</div><div class="empty-sub">Click "Generate Synthetic Data" or upload alerts on the <a href="reports.html">Reports page</a>.</div></div></div>
+    </div>
+    <div id="tab-noise" class="tab-panel">
+      <div id="noiseContent"><div class="empty-state"><div class="empty-icon">🔇</div><div class="empty-title">No data</div><div class="empty-sub">Load alert data first.</div></div></div>
+    </div>
+    <div id="tab-genuine" class="tab-panel">
+      <div id="genuineContent"><div class="empty-state"><div class="empty-icon">✅</div><div class="empty-title">No data</div><div class="empty-sub">Load alert data first.</div></div></div>
+    </div>
+    <div id="tab-trends" class="tab-panel">
+      <div id="trendsContent"><div class="empty-state"><div class="empty-icon">📈</div><div class="empty-title">No data</div><div class="empty-sub">Load alert data first.</div></div></div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+let dashData = null;
+const charts = {};
+
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+async function generateAndLoad() {
+  showToast('Generating 200 synthetic alerts…');
+  try {
+    const r = await fetch(`${API}/api/alerts/reports/generate`, { method: 'POST' });
+    if (!r.ok) throw new Error(await r.text());
+    showToast('Generated! Loading dashboard…', 'success');
+    await loadDashboard();
+  } catch(e) {
+    showToast('Generation failed: ' + e.message, 'error');
+  }
+}
+
+async function loadDashboard() {
+  ['overviewContent','noiseContent','genuineContent','trendsContent'].forEach(id => {
+    document.getElementById(id).innerHTML = spinnerHTML();
+  });
+  try {
+    const r = await fetch(`${API}/api/alerts/dashboard/latest/data`);
+    const data = await r.json();
+    if (data.empty) {
+      ['overviewContent','noiseContent','genuineContent','trendsContent'].forEach(id => {
+        document.getElementById(id).innerHTML = emptyHTML('🚨', 'No alert data', 'Generate or upload alerts first.');
+      });
+      return;
+    }
+    dashData = data;
+    renderOverview(data.stats);
+    renderNoise(data.stats);
+    renderGenuine(data.stats);
+    renderTrends(data.stats);
+  } catch(e) {
+    showToast('Failed to load: ' + e.message, 'error');
+  }
+}
+
+function renderOverview(stats) {
+  document.getElementById('overviewContent').innerHTML = `
+    <div class="kpi-row kpi-row-4">
+      <div class="kpi-card alert">
+        <div class="kpi-label">Total Alerts</div>
+        <div class="kpi-value">${stats.total.toLocaleString()}</div>
+        <div class="kpi-sub">in dataset</div>
+      </div>
+      <div class="kpi-card alert">
+        <div class="kpi-label">Noise</div>
+        <div class="kpi-value">${stats.noise_count}</div>
+        <div class="kpi-sub">${stats.noise_ratio}% noise rate</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Genuine</div>
+        <div class="kpi-value">${stats.genuine_count}</div>
+        <div class="kpi-sub">require attention</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">MTTR</div>
+        <div class="kpi-value">${stats.mttr_minutes}m</div>
+        <div class="kpi-sub">mean time to resolve</div>
+      </div>
+    </div>
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-card-title">Genuine vs Noise</div>
+        <div class="chart-container" style="max-height:260px"><canvas id="donutChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Alert Volume by Day</div>
+        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+  `;
+
+  // Donut
+  setTimeout(() => {
+    destroyChart('donut');
+    const ctx = document.getElementById('donutChart')?.getContext('2d');
+    if (ctx) charts['donut'] = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['Genuine', 'Noise'],
+        datasets: [{ data: [stats.genuine_count, stats.noise_count], backgroundColor: ['#22c55e', '#DC3545'], borderWidth: 0 }]
+      },
+      options: { responsive: true, cutout: '65%', plugins: { legend: { position: 'bottom' } } }
+    });
+
+    destroyChart('trend');
+    const tCtx = document.getElementById('trendChart')?.getContext('2d');
+    if (tCtx && stats.daily_trend.length) {
+      charts['trend'] = new Chart(tCtx, {
+        type: 'line',
+        data: {
+          labels: stats.daily_trend.map(d => d.date),
+          datasets: [
+            { label: 'Genuine', data: stats.daily_trend.map(d => d.genuine), borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4 },
+            { label: 'Noise', data: stats.daily_trend.map(d => d.noise), borderColor: '#DC3545', backgroundColor: 'rgba(220,53,69,0.1)', fill: true, tension: 0.4 },
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+    }
+  }, 50);
+}
+
+function renderNoise(stats) {
+  document.getElementById('noiseContent').innerHTML = `
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-card-title">Top Noisy Sources</div>
+        <div class="chart-container"><canvas id="noisySourceChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Noise Score by Service</div>
+        <div class="chart-container"><canvas id="noiseScoreChart"></canvas></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Repeat Offenders</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Alert Alias</th><th>Fire Count</th><th>Noise Score</th></tr></thead>
+          <tbody>
+            ${stats.repeat_offenders.map(r => `
+              <tr>
+                <td><code style="font-size:12px">${r.alias}</code></td>
+                <td>${r.count}</td>
+                <td><div class="noise-bar-wrap"><div class="noise-bar-track"><div class="noise-bar-fill" style="width:${Math.min(r.count*5,100)}%"></div></div><div class="noise-bar-val">${r.count}</div></div></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">🔇 Suppression Recommendations</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Alert</th><th>Occurrences</th><th>Action</th></tr></thead>
+          <tbody>
+            ${stats.suppression_recommendations.length ? stats.suppression_recommendations.map(r => `
+              <tr>
+                <td><code style="font-size:12px">${r.alias}</code></td>
+                <td>${r.count}</td>
+                <td><span class="badge badge-noise">Suppress</span></td>
+              </tr>
+            `).join('') : '<tr><td colspan="3" style="text-align:center;color:#64748b">No strong suppression candidates</td></tr>'}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    destroyChart('noisySrc');
+    const ctx = document.getElementById('noisySourceChart')?.getContext('2d');
+    if (ctx) charts['noisySrc'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: stats.top_noisy_sources.map(s => s.source),
+        datasets: [{ label: 'Noise Count', data: stats.top_noisy_sources.map(s => s.count), backgroundColor: '#DC3545' }]
+      },
+      options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    destroyChart('noiseScore');
+    const sCtx = document.getElementById('noiseScoreChart')?.getContext('2d');
+    if (sCtx) {
+      const sorted = [...stats.service_noise_scores].sort((a,b) => b.score - a.score).slice(0,10);
+      charts['noiseScore'] = new Chart(sCtx, {
+        type: 'bar',
+        data: {
+          labels: sorted.map(s => s.service),
+          datasets: [{ label: 'Avg Noise Score', data: sorted.map(s => s.score), backgroundColor: CHART_COLORS }]
+        },
+        options: { indexAxis: 'y', responsive: true, plugins: { legend: { display: false } }, scales: { x: { max: 100 } } }
+      });
+    }
+  }, 50);
+}
+
+function renderGenuine(stats) {
+  const unresolved = stats.unresolved_genuine || [];
+  document.getElementById('genuineContent').innerHTML = `
+    <div class="kpi-row kpi-row-3">
+      <div class="kpi-card green">
+        <div class="kpi-label">Total Genuine</div>
+        <div class="kpi-value">${stats.genuine_count}</div>
+        <div class="kpi-sub">real incidents</div>
+      </div>
+      <div class="kpi-card alert">
+        <div class="kpi-label">Unresolved</div>
+        <div class="kpi-value">${unresolved.length}</div>
+        <div class="kpi-sub">need attention</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">P1/P2</div>
+        <div class="kpi-value">${stats.high_severity_genuine.length}</div>
+        <div class="kpi-sub">high severity</div>
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid-2">
+      <div class="card">
+        <div class="card-title">High Severity Genuine Alerts</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Message</th><th>Source</th><th>Priority</th><th>Status</th></tr></thead>
+            <tbody>
+              ${stats.high_severity_genuine.slice(0,10).map(a => `
+                <tr>
+                  <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.message}</td>
+                  <td>${a.source}</td>
+                  <td>${priorityBadge(a.priority)}</td>
+                  <td>${statusBadge(a.status)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Team Alert Breakdown</div>
+        <div class="chart-container"><canvas id="teamChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Unresolved Genuine Alerts</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Message</th><th>Source</th><th>Priority</th><th>Team</th><th>Created</th></tr></thead>
+          <tbody>
+            ${unresolved.slice(0,15).map(a => `
+              <tr>
+                <td style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${a.message}</td>
+                <td>${a.source}</td>
+                <td>${priorityBadge(a.priority)}</td>
+                <td>${(a.teams||['—'])[0]}</td>
+                <td>${formatDateTime(a.createdAt)}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  setTimeout(() => {
+    destroyChart('team');
+    const ctx = document.getElementById('teamChart')?.getContext('2d');
+    if (ctx && stats.team_breakdown.length) {
+      charts['team'] = new Chart(ctx, {
+        type: 'bar',
+        data: {
+          labels: stats.team_breakdown.map(t => t.team),
+          datasets: [
+            { label: 'Genuine', data: stats.team_breakdown.map(t => t.genuine), backgroundColor: '#22c55e' },
+            { label: 'Noise', data: stats.team_breakdown.map(t => t.noise), backgroundColor: '#DC3545' },
+          ]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true } } }
+      });
+    }
+  }, 50);
+}
+
+function renderTrends(stats) {
+  const hourly = stats.hourly_distribution || [];
+  const maxCount = Math.max(...hourly.map(h => h.count), 1);
+
+  document.getElementById('trendsContent').innerHTML = `
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-card-title">Alert Volume by Hour (Heatmap)</div>
+        <div class="heatmap-grid" id="heatmapGrid"></div>
+        <div class="heatmap-label">
+          ${hourly.map(h => `<span>${h.hour}h</span>`).join('')}
+        </div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Peak Alert Hours</div>
+        <div class="chart-container"><canvas id="hourlyBarChart"></canvas></div>
+      </div>
+    </div>
+    <div class="chart-card" style="margin-bottom:20px">
+      <div class="chart-card-title">Service Health Score Over Time</div>
+      <div class="chart-container"><canvas id="healthChart"></canvas></div>
+    </div>
+  `;
+
+  // Heatmap
+  const grid = document.getElementById('heatmapGrid');
+  if (grid) {
+    hourly.forEach(h => {
+      const cell = document.createElement('div');
+      cell.className = 'heatmap-cell';
+      const intensity = h.count / maxCount;
+      const r = Math.floor(220 * intensity);
+      const g = Math.floor(53 * intensity);
+      const b = Math.floor(69 * intensity);
+      cell.style.background = intensity < 0.1 ? '#f1f5f9' : `rgba(${r},${g},${b},${0.2 + intensity*0.8})`;
+      cell.title = `${h.hour}:00 — ${h.count} alerts`;
+      grid.appendChild(cell);
+    });
+  }
+
+  setTimeout(() => {
+    destroyChart('hourlyBar');
+    const ctx = document.getElementById('hourlyBarChart')?.getContext('2d');
+    if (ctx) charts['hourlyBar'] = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: hourly.map(h => `${h.hour}:00`),
+        datasets: [{ label: 'Alerts', data: hourly.map(h => h.count), backgroundColor: hourly.map(h => {
+          const i = h.count / maxCount;
+          return i > 0.7 ? '#DC3545' : i > 0.4 ? '#f97316' : '#4F8EF7';
+        }) }]
+      },
+      options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+
+    destroyChart('health');
+    const hCtx = document.getElementById('healthChart')?.getContext('2d');
+    if (hCtx && stats.daily_trend.length) {
+      const healthScores = stats.daily_trend.map(d => {
+        const total = (d.genuine || 0) + (d.noise || 0);
+        return total > 0 ? Math.round((d.genuine / total) * 100) : 100;
+      });
+      charts['health'] = new Chart(hCtx, {
+        type: 'line',
+        data: {
+          labels: stats.daily_trend.map(d => d.date),
+          datasets: [{ label: 'Signal Quality Score (%)', data: healthScores, borderColor: '#22c55e', backgroundColor: 'rgba(34,197,94,0.1)', fill: true, tension: 0.4 }]
+        },
+        options: { responsive: true, scales: { y: { min: 0, max: 100, ticks: { callback: v => v + '%' } } }, plugins: { legend: { display: false } } }
+      });
+    }
+  }, 50);
+}
+
+function destroyChart(key) {
+  if (charts[key]) { charts[key].destroy(); delete charts[key]; }
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

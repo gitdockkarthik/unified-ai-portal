@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Alert Settings — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="../cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> Alert Analyser <span>›</span> Settings</div>
+      <h1 class="page-title">⚙️ Alert Settings</h1>
+      <p class="page-subtitle">Configure data source and integrations for Alert Analyser</p>
+    </div>
+
+    <div class="settings-grid">
+      <!-- Phase 1: Active -->
+      <div class="card">
+        <div class="settings-section-title">Phase 1 — Data Source</div>
+        <div class="form-group">
+          <label class="form-label">Active Data Source</label>
+          <div class="radio-group">
+            <div class="radio-option">
+              <input type="radio" name="dataSource" id="srcFile" value="file" checked />
+              <label for="srcFile">📁 File Upload / Synthetic Data (Active)</label>
+            </div>
+          </div>
+        </div>
+        <p style="font-size:13px;color:#64748b;margin-top:8px">
+          Use the <a href="reports.html" style="color:#DC3545">Reports page</a> to generate synthetic alerts or upload OpsGenie JSON exports.
+        </p>
+        <button class="btn btn-danger" style="margin-top:16px" onclick="saveSettings()">Save Settings</button>
+      </div>
+
+      <!-- Phase 2: Live Feed -->
+      <div class="card coming-soon">
+        <div class="settings-section-title">Phase 2 — Live Alert Feed</div>
+        <div class="form-group">
+          <label class="form-label">Alert Platform</label>
+          <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="liveSrc" value="opsgenie" disabled /><label>OpsGenie API</label></div>
+            <div class="radio-option"><input type="radio" name="liveSrc" value="pagerduty" disabled /><label>PagerDuty API</label></div>
+            <div class="radio-option"><input type="radio" name="liveSrc" value="datadog" disabled /><label>Datadog Monitors</label></div>
+            <div class="radio-option"><input type="radio" name="liveSrc" value="cloudwatch" disabled /><label>CloudWatch Alarms</label></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">API Key</label>
+          <input type="password" class="form-input" placeholder="Enter API key…" disabled />
+        </div>
+        <div class="form-group">
+          <label class="form-label">API URL</label>
+          <input type="text" class="form-input" placeholder="https://api.opsgenie.com/v2" disabled />
+        </div>
+      </div>
+
+      <!-- Phase 3: Escalations -->
+      <div class="card coming-soon">
+        <div class="settings-section-title">Phase 3 — Escalations</div>
+        <div class="form-group">
+          <label class="form-label">Notification Channel</label>
+          <div class="radio-group">
+            <div class="radio-option"><input type="radio" name="notifType" value="teams" disabled /><label>Microsoft Teams Webhook</label></div>
+            <div class="radio-option"><input type="radio" name="notifType" value="slack" disabled /><label>Slack Webhook</label></div>
+            <div class="radio-option"><input type="radio" name="notifType" value="email" disabled /><label>Email SMTP</label></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Webhook URL</label>
+          <input type="text" class="form-input" placeholder="https://hooks.slack.com/…" disabled />
+          <div class="form-hint">Receive escalation alerts when genuine P1/P2 incidents are detected</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Escalation Rules</label>
+          <textarea class="form-input" rows="3" placeholder="Escalate if: noise rate > 70%, unresolved P1 > 30 min" disabled style="resize:none"></textarea>
+        </div>
+      </div>
+
+      <!-- Agent Info -->
+      <div class="card">
+        <div class="settings-section-title">Noise Detection Configuration</div>
+        <table style="width:100%;font-size:13px">
+          <tbody>
+            <tr><td style="padding:8px 0;color:#64748b">Repeat threshold</td><td style="font-weight:600">3x within 1 hour</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b">Auto-resolve threshold</td><td style="font-weight:600">&lt; 5 minutes</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b">Auto-resolve rate (noisy)</td><td style="font-weight:600">&gt; 70%</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b">Genuine open duration</td><td style="font-weight:600">&gt; 30 minutes</td></tr>
+            <tr><td style="padding:8px 0;color:#64748b">High severity</td><td style="font-weight:600">P1, P2</td></tr>
+          </tbody>
+        </table>
+        <div id="agentInfo" style="margin-top:16px;padding-top:16px;border-top:1px solid #e2e8f0">
+          <div class="loading"><div class="loading-spinner" style="width:24px;height:24px;border-width:2px"></div></div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+async function loadSettings() {
+  try {
+    const r = await fetch(`${API}/api/alerts/settings`);
+    const s = await r.json();
+    document.getElementById('agentInfo').innerHTML = `
+      <table style="width:100%;font-size:13px">
+        <tr><td style="padding:6px 0;color:#64748b">Data Source</td><td style="font-weight:600">${s.data_source}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Agent ID</td><td style="font-weight:600">${s.agent_id}</td></tr>
+        <tr><td style="padding:6px 0;color:#64748b">Last Updated</td><td style="font-weight:600">${formatDateTime(s.updated_at)}</td></tr>
+      </table>
+    `;
+  } catch(e) {
+    document.getElementById('agentInfo').innerHTML = `<p style="color:#dc2626;font-size:13px">Failed to load</p>`;
+  }
+}
+
+async function saveSettings() {
+  try {
+    await fetch(`${API}/api/alerts/settings`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data_source: 'file' })
+    });
+    showToast('Settings saved', 'success');
+    loadSettings();
+  } catch(e) {
+    showToast('Save failed', 'error');
+  }
+}
+
+loadSettings();
+</script>
+</body>
+</html>

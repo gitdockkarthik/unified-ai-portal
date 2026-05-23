@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CUR Dashboard — Unified AI Portal</title>
+  <link rel="stylesheet" href="../../style.css" />
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="../alerts/chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="../alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../alerts/reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="../alerts/settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="../../admin/index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../../index.html">Home</a> <span>›</span> CUR Analyser <span>›</span> Dashboard</div>
+      <h1 class="page-title">💰 CUR Dashboard</h1>
+      <p class="page-subtitle">AWS Cost & Usage Report analysis</p>
+    </div>
+
+    <div id="dashContent">
+      <div class="empty-state">
+        <div class="empty-icon">📁</div>
+        <div class="empty-title">No report loaded</div>
+        <div class="empty-sub">Upload a CUR file on the <a href="reports.html">Reports page</a> to see your cost dashboard.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../../portal.js"></script>
+<script>
+let serviceChart, trendChart;
+
+async function loadDashboard() {
+  const el = document.getElementById('dashContent');
+  el.innerHTML = spinnerHTML();
+  try {
+    const r = await fetch(`${API}/api/cur/dashboard/latest/data`);
+    const data = await r.json();
+    if (data.empty) {
+      el.innerHTML = `<div class="empty-state"><div class="empty-icon">📁</div><div class="empty-title">No report loaded</div><div class="empty-sub">Upload a CUR file on the <a href="reports.html">Reports page</a> to see your cost dashboard.</div></div>`;
+      return;
+    }
+    renderDashboard(data);
+  } catch(e) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to load dashboard</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+}
+
+function renderDashboard(data) {
+  const { summary, services, trend, report } = data;
+  const el = document.getElementById('dashContent');
+
+  const topSvc = services[0] || {};
+  const topCost = topSvc.cost || 0;
+  const rowCount = summary.row_count || 0;
+
+  el.innerHTML = `
+    <div class="kpi-row kpi-row-4">
+      <div class="kpi-card">
+        <div class="kpi-label">Total Cost</div>
+        <div class="kpi-value">${formatUSD(summary.total_cost)}</div>
+        <div class="kpi-sub">${report.filename}</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Top Service</div>
+        <div class="kpi-value" style="font-size:18px">${topSvc.service || '—'}</div>
+        <div class="kpi-sub">${formatUSD(topCost)}</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Total Rows</div>
+        <div class="kpi-value">${rowCount.toLocaleString()}</div>
+        <div class="kpi-sub">line items</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-label">Services</div>
+        <div class="kpi-value">${services.length}</div>
+        <div class="kpi-sub">unique services</div>
+      </div>
+    </div>
+
+    <div class="chart-grid chart-grid-2">
+      <div class="chart-card">
+        <div class="chart-card-title">Top Services by Cost</div>
+        <div class="chart-container"><canvas id="serviceChart"></canvas></div>
+      </div>
+      <div class="chart-card">
+        <div class="chart-card-title">Daily Cost Trend</div>
+        <div class="chart-container"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Service Cost Breakdown</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Service</th><th>Cost</th><th>% of Total</th></tr></thead>
+          <tbody>
+            ${services.map(s => `
+              <tr>
+                <td>${s.service || 'Unknown'}</td>
+                <td>${formatUSD(s.cost)}</td>
+                <td>${summary.total_cost > 0 ? ((s.cost / summary.total_cost) * 100).toFixed(1) : 0}%</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+
+  // Service bar chart
+  const sCtx = document.getElementById('serviceChart').getContext('2d');
+  serviceChart = new Chart(sCtx, {
+    type: 'bar',
+    data: {
+      labels: services.slice(0, 10).map(s => s.service),
+      datasets: [{ label: 'Cost (USD)', data: services.slice(0, 10).map(s => s.cost), backgroundColor: '#4F8EF7' }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { x: { ticks: { callback: v => '$' + v.toLocaleString() } } }
+    }
+  });
+
+  // Trend line chart
+  const tCtx = document.getElementById('trendChart').getContext('2d');
+  trendChart = new Chart(tCtx, {
+    type: 'line',
+    data: {
+      labels: trend.map(t => t.date),
+      datasets: [{ label: 'Daily Cost', data: trend.map(t => t.cost), borderColor: '#4F8EF7', backgroundColor: 'rgba(79,142,247,0.1)', fill: true, tension: 0.4 }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: { y: { ticks: { callback: v => '$' + v.toLocaleString() } } }
+    }
+  });
+}
+
+loadDashboard();
+</script>
+</body>
+</html>

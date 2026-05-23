@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Unified AI Portal</title>
+  <link rel="stylesheet" href="../style.css" />
+</head>
+<body>
+<div class="portal-layout">
+  <nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo"><span class="logo-icon">⚡</span><span class="logo-text">AI Portal</span></div>
+      <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
+    </div>
+    <div class="sidebar-nav">
+      <a href="../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
+      <div class="nav-agent" id="agent-cur">
+        <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-cur-children">
+          <a href="../agents/cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../agents/cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../agents/cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../agents/cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-agent" id="agent-alerts">
+        <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
+        <div class="nav-agent-children" id="agent-alerts-children">
+          <a href="../agents/alerts/chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="../agents/alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../agents/alerts/reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="../agents/alerts/settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+        </div>
+      </div>
+      <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
+      <a href="index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+    </div>
+  </nav>
+
+  <main class="main-content">
+    <div class="page-header">
+      <div class="breadcrumb"><a href="../index.html">Home</a> <span>›</span> Admin</div>
+      <h1 class="page-title">⚙️ Platform Admin</h1>
+      <p class="page-subtitle">Manage agents and platform configuration</p>
+    </div>
+
+    <!-- Platform Health -->
+    <div class="kpi-row kpi-row-3" style="margin-bottom:24px">
+      <div class="kpi-card green">
+        <div class="kpi-label">Backend API</div>
+        <div class="kpi-value" id="apiStatus">🔄</div>
+        <div class="kpi-sub" id="apiStatusText">Checking…</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Active Agents</div>
+        <div class="kpi-value" id="agentCount">—</div>
+        <div class="kpi-sub">registered</div>
+      </div>
+      <div class="kpi-card green">
+        <div class="kpi-label">Database</div>
+        <div class="kpi-value" id="dbStatus">🔄</div>
+        <div class="kpi-sub" id="dbStatusText">Checking…</div>
+      </div>
+    </div>
+
+    <!-- Agents -->
+    <div class="card">
+      <div class="card-title">Registered Agents</div>
+      <div id="agentsPanel"><div class="loading"><div class="loading-spinner"></div></div></div>
+    </div>
+
+    <!-- Platform Info -->
+    <div class="card">
+      <div class="card-title">Platform Information</div>
+      <table style="width:100%;font-size:13px">
+        <tbody>
+          <tr><td style="padding:8px 0;color:#64748b;width:180px">Portal Version</td><td style="font-weight:600">1.0.0</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">AI Model</td><td style="font-weight:600">claude-sonnet-4-20250514</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Query Engine</td><td style="font-weight:600">DuckDB 1.1.3</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Backend</td><td style="font-weight:600">FastAPI + Python 3.12</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Database</td><td style="font-weight:600">PostgreSQL (async)</td></tr>
+          <tr><td style="padding:8px 0;color:#64748b">Deployment</td><td style="font-weight:600">Docker Compose / Railway</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Quick Links -->
+    <div class="card">
+      <div class="card-title">Quick Links</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <a href="../agents/cur/reports.html" class="btn btn-primary">💰 Upload CUR Report</a>
+        <a href="../agents/alerts/reports.html" class="btn btn-danger">🚨 Generate Alert Data</a>
+        <a href="http://localhost:8000/docs" target="_blank" class="btn btn-secondary">📖 API Docs</a>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div id="toast"></div>
+<script src="../portal.js"></script>
+<script>
+async function checkHealth() {
+  try {
+    const r = await fetch(`${API}/api/health`);
+    const data = await r.json();
+    document.getElementById('apiStatus').textContent = '🟢';
+    document.getElementById('apiStatusText').textContent = 'Online';
+    document.getElementById('dbStatus').textContent = '🟢';
+    document.getElementById('dbStatusText').textContent = 'Connected';
+  } catch(e) {
+    document.getElementById('apiStatus').textContent = '🔴';
+    document.getElementById('apiStatusText').textContent = 'Offline';
+    document.getElementById('dbStatus').textContent = '❓';
+    document.getElementById('dbStatusText').textContent = 'Unknown';
+  }
+}
+
+async function loadAgents() {
+  try {
+    const r = await fetch(`${API}/api/agents`);
+    const agents = await r.json();
+    document.getElementById('agentCount').textContent = agents.length;
+
+    const agentIcons = { cur: '#4F8EF7', alerts: '#DC3545' };
+    document.getElementById('agentsPanel').innerHTML = agents.map(a => `
+      <div class="admin-agent-card">
+        <div class="admin-agent-icon">${a.icon || '🤖'}</div>
+        <div class="admin-agent-info">
+          <h3>${a.name}</h3>
+          <p>${a.description || '—'}</p>
+        </div>
+        <div style="text-align:right">
+          <div style="margin-bottom:8px">
+            <span class="status-dot ${a.status === 'active' ? 'active' : ''}"></span>
+            <span style="font-size:13px;font-weight:600">${a.status}</span>
+          </div>
+          <div style="font-size:12px;color:#64748b">ID: ${a.id} · slug: ${a.slug}</div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {
+    document.getElementById('agentsPanel').innerHTML = `<p style="color:#dc2626;font-size:13px">Failed to load agents: ${e.message}</p>`;
+  }
+}
+
+checkHealth();
+loadAgents();
+</script>
+</body>
+</html>
