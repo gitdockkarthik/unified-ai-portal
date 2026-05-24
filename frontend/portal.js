@@ -1,7 +1,20 @@
-// Unified AI Portal — shared JS utilities
+// Unified AI Portal — shared JS utilities + hash-based SPA router
 
-const API_BASE = 'https://lively-vibrancy-production-af74.up.railway.app';
+const API_BASE = 'https://api.agentsiq.net';
 const API = API_BASE;
+
+// Hash route → HTML file path
+const ROUTES = {
+  '/cur/chat':         '/agents/cur/chat.html',
+  '/cur/dashboard':    '/agents/cur/dashboard.html',
+  '/cur/reports':      '/agents/cur/reports.html',
+  '/cur/settings':     '/agents/cur/settings.html',
+  '/alerts/chat':      '/agents/alerts/chat.html',
+  '/alerts/dashboard': '/agents/alerts/dashboard.html',
+  '/alerts/reports':   '/agents/alerts/reports.html',
+  '/alerts/settings':  '/agents/alerts/settings.html',
+  '/admin':            '/admin/index.html',
+};
 
 function toggleAgent(slug) {
   const el = document.getElementById(`agent-${slug}`);
@@ -12,45 +25,93 @@ function toggleSidebar() {
   document.getElementById('sidebar').classList.toggle('collapsed');
 }
 
-// Mark active nav item based on current path
+function openAgent(slug) {
+  const el = document.getElementById(`agent-${slug}`);
+  if (el) el.classList.add('open');
+}
+
 function markActiveNav() {
-  const path = window.location.pathname;
+  const hash = window.location.hash.replace('#', '') || '/';
   document.querySelectorAll('[data-page]').forEach(el => el.classList.remove('active'));
 
-  if (path.includes('/cur/chat')) {
+  if (hash.includes('/cur/chat')) {
     document.querySelector('[data-page="cur-chat"]')?.classList.add('active');
     openAgent('cur');
-  } else if (path.includes('/cur/dashboard')) {
+  } else if (hash.includes('/cur/dashboard')) {
     document.querySelector('[data-page="cur-dashboard"]')?.classList.add('active');
     openAgent('cur');
-  } else if (path.includes('/cur/reports')) {
+  } else if (hash.includes('/cur/reports')) {
     document.querySelector('[data-page="cur-reports"]')?.classList.add('active');
     openAgent('cur');
-  } else if (path.includes('/cur/settings')) {
+  } else if (hash.includes('/cur/settings')) {
     document.querySelector('[data-page="cur-settings"]')?.classList.add('active');
     openAgent('cur');
-  } else if (path.includes('/alerts/chat')) {
+  } else if (hash.includes('/alerts/chat')) {
     document.querySelector('[data-page="alerts-chat"]')?.classList.add('active');
     openAgent('alerts');
-  } else if (path.includes('/alerts/dashboard')) {
+  } else if (hash.includes('/alerts/dashboard')) {
     document.querySelector('[data-page="alerts-dashboard"]')?.classList.add('active');
     openAgent('alerts');
-  } else if (path.includes('/alerts/reports')) {
+  } else if (hash.includes('/alerts/reports')) {
     document.querySelector('[data-page="alerts-reports"]')?.classList.add('active');
     openAgent('alerts');
-  } else if (path.includes('/alerts/settings')) {
+  } else if (hash.includes('/alerts/settings')) {
     document.querySelector('[data-page="alerts-settings"]')?.classList.add('active');
     openAgent('alerts');
-  } else if (path.includes('/admin')) {
+  } else if (hash.includes('/admin')) {
     document.querySelector('[data-page="admin"]')?.classList.add('active');
   } else {
     document.querySelector('[data-page="home"]')?.classList.add('active');
   }
 }
 
-function openAgent(slug) {
-  const el = document.getElementById(`agent-${slug}`);
-  if (el) el.classList.add('open');
+// SPA router — fetches <main> content from subpage and injects it
+async function loadRoute(hash) {
+  const route = (hash !== undefined ? hash : window.location.hash.replace('#', '')).trim() || '/';
+  const spaContent = document.getElementById('spa-content');
+  const homeContent = document.getElementById('home-content');
+  if (!spaContent) return; // Not running as SPA shell
+
+  if (route === '/' || route === '') {
+    spaContent.style.display = 'none';
+    if (homeContent) homeContent.style.display = '';
+    markActiveNav();
+    return;
+  }
+
+  const filePath = ROUTES[route];
+  if (homeContent) homeContent.style.display = 'none';
+  spaContent.style.display = '';
+
+  if (!filePath) {
+    spaContent.innerHTML = `<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-title">Page not found</div><div class="empty-sub">Route "${route}" does not exist.</div></div>`;
+    markActiveNav();
+    return;
+  }
+
+  spaContent.innerHTML = `<div class="loading"><div class="loading-spinner"></div></div>`;
+  try {
+    const resp = await fetch(filePath);
+    const html = await resp.text();
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const main = doc.querySelector('main.main-content');
+    spaContent.innerHTML = main ? main.innerHTML : '';
+    // Re-execute inline scripts so page logic runs
+    spaContent.querySelectorAll('script').forEach(old => {
+      if (old.src) return;
+      const s = document.createElement('script');
+      s.textContent = old.textContent;
+      old.replaceWith(s);
+    });
+  } catch (e) {
+    spaContent.innerHTML = `<div class="empty-state"><div class="empty-icon">⚠️</div><div class="empty-title">Failed to load page</div><div class="empty-sub">${e.message}</div></div>`;
+  }
+  markActiveNav();
+}
+
+function navigate(path) {
+  window.location.hash = path;
 }
 
 // Toast notifications
@@ -157,7 +218,15 @@ function renderChatChart(containerId, chartData) {
 
 // Init
 document.addEventListener('DOMContentLoaded', () => {
-  markActiveNav();
   const toggleBtn = document.getElementById('sidebarToggle');
   if (toggleBtn) toggleBtn.addEventListener('click', toggleSidebar);
+
+  if (document.getElementById('spa-content')) {
+    // SPA mode: wire up hash router
+    window.addEventListener('hashchange', () => loadRoute());
+    loadRoute();
+  } else {
+    // Standalone subpage mode: just mark active nav
+    markActiveNav();
+  }
 });
