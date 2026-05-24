@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Unified AI Portal</title>
   <link rel="stylesheet" href="style.css" />
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
   <div class="portal-layout">
@@ -20,7 +19,7 @@
       </div>
 
       <div class="sidebar-nav">
-        <a href="/#/" class="nav-item nav-home" data-page="home">
+        <a href="index.html" class="nav-item nav-home" data-page="home">
           <span class="nav-icon">🏠</span>
           <span class="nav-label">Home</span>
         </a>
@@ -37,16 +36,16 @@
             <span class="nav-chevron">▾</span>
           </button>
           <div class="nav-agent-children" id="agent-cur-children">
-            <a href="/#/cur/chat" class="nav-child" data-page="cur-chat">
+            <a href="agents/cur/chat.html" class="nav-child" data-page="cur-chat">
               <span>💬</span> Chatbot
             </a>
-            <a href="/#/cur/dashboard" class="nav-child" data-page="cur-dashboard">
+            <a href="agents/cur/dashboard.html" class="nav-child" data-page="cur-dashboard">
               <span>📊</span> Dashboard
             </a>
-            <a href="/#/cur/reports" class="nav-child" data-page="cur-reports">
+            <a href="agents/cur/reports.html" class="nav-child" data-page="cur-reports">
               <span>📁</span> Reports
             </a>
-            <a href="/#/cur/settings" class="nav-child" data-page="cur-settings">
+            <a href="agents/cur/settings.html" class="nav-child" data-page="cur-settings">
               <span>⚙️</span> Settings
             </a>
           </div>
@@ -60,16 +59,16 @@
             <span class="nav-chevron">▾</span>
           </button>
           <div class="nav-agent-children" id="agent-alerts-children">
-            <a href="/#/alerts/chat" class="nav-child" data-page="alerts-chat">
+            <a href="agents/alerts/chat.html" class="nav-child" data-page="alerts-chat">
               <span>💬</span> Chatbot
             </a>
-            <a href="/#/alerts/dashboard" class="nav-child" data-page="alerts-dashboard">
+            <a href="agents/alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard">
               <span>📊</span> Dashboard
             </a>
-            <a href="/#/alerts/reports" class="nav-child" data-page="alerts-reports">
+            <a href="agents/alerts/reports.html" class="nav-child" data-page="alerts-reports">
               <span>📁</span> Reports
             </a>
-            <a href="/#/alerts/settings" class="nav-child" data-page="alerts-settings">
+            <a href="agents/alerts/settings.html" class="nav-child" data-page="alerts-settings">
               <span>⚙️</span> Settings
             </a>
           </div>
@@ -79,7 +78,7 @@
           <div class="nav-section-label">PLATFORM</div>
         </div>
 
-        <a href="/#/admin" class="nav-item" data-page="admin">
+        <a href="admin/index.html" class="nav-item" data-page="admin">
           <span class="nav-icon">⚙️</span>
           <span class="nav-label">Admin</span>
         </a>
@@ -88,59 +87,56 @@
 
     <!-- Main content -->
     <main class="main-content">
-      <!-- Home page (shown by default) -->
-      <div id="home-content">
-        <div class="page-header">
-          <h1 class="page-title">Welcome to Unified AI Portal</h1>
-          <p class="page-subtitle">AI-powered analysis agents for your infrastructure</p>
-        </div>
+      <div class="page-header">
+        <h1 class="page-title">Welcome to Unified AI Portal</h1>
+        <p class="page-subtitle">AI-powered analysis agents for your infrastructure</p>
+      </div>
 
-        <div class="home-grid">
-          <div class="agent-card agent-card-cur" onclick="location.href='/#/cur/dashboard'">
-            <div class="agent-card-icon">💰</div>
-            <div class="agent-card-info">
-              <h2>CUR Analyser</h2>
-              <p>Analyse AWS Cost &amp; Usage Reports with AI-powered insights. Identify cost drivers, detect anomalies, and get optimisation recommendations.</p>
-            </div>
-            <div class="agent-card-links">
-              <a href="/#/cur/chat" onclick="event.stopPropagation()">💬 Chat</a>
-              <a href="/#/cur/dashboard" onclick="event.stopPropagation()">📊 Dashboard</a>
-              <a href="/#/cur/reports" onclick="event.stopPropagation()">📁 Reports</a>
-            </div>
+      <div class="home-grid">
+        <div class="agent-card agent-card-cur" onclick="location.href='agents/cur/dashboard.html'">
+          <div class="agent-card-icon">💰</div>
+          <div class="agent-card-info">
+            <h2>CUR Analyser</h2>
+            <p>Analyse AWS Cost &amp; Usage Reports with AI-powered insights. Identify cost drivers, detect anomalies, and get optimisation recommendations.</p>
           </div>
-
-          <div class="agent-card agent-card-alerts" onclick="location.href='/#/alerts/dashboard'">
-            <div class="agent-card-icon">🚨</div>
-            <div class="agent-card-info">
-              <h2>Alert Analyser</h2>
-              <p>Detect alert noise from OpsGenie data. Separate genuine incidents from automated noise and get suppression recommendations.</p>
-            </div>
-            <div class="agent-card-links">
-              <a href="/#/alerts/chat" onclick="event.stopPropagation()">💬 Chat</a>
-              <a href="/#/alerts/dashboard" onclick="event.stopPropagation()">📊 Dashboard</a>
-              <a href="/#/alerts/reports" onclick="event.stopPropagation()">📁 Reports</a>
-            </div>
+          <div class="agent-card-links">
+            <a href="agents/cur/chat.html" onclick="event.stopPropagation()">💬 Chat</a>
+            <a href="agents/cur/dashboard.html" onclick="event.stopPropagation()">📊 Dashboard</a>
+            <a href="agents/cur/reports.html" onclick="event.stopPropagation()">📁 Reports</a>
           </div>
         </div>
 
-        <div class="platform-stats" id="platformStats">
-          <div class="stat-card">
-            <div class="stat-value" id="statAgents">2</div>
-            <div class="stat-label">Active Agents</div>
+        <div class="agent-card agent-card-alerts" onclick="location.href='agents/alerts/dashboard.html'">
+          <div class="agent-card-icon">🚨</div>
+          <div class="agent-card-info">
+            <h2>Alert Analyser</h2>
+            <p>Detect alert noise from OpsGenie data. Separate genuine incidents from automated noise and get suppression recommendations.</p>
           </div>
-          <div class="stat-card">
-            <div class="stat-value" id="statStatus">🟢</div>
-            <div class="stat-label">System Status</div>
+          <div class="agent-card-links">
+            <a href="agents/alerts/chat.html" onclick="event.stopPropagation()">💬 Chat</a>
+            <a href="agents/alerts/dashboard.html" onclick="event.stopPropagation()">📊 Dashboard</a>
+            <a href="agents/alerts/reports.html" onclick="event.stopPropagation()">📁 Reports</a>
           </div>
         </div>
       </div>
 
-      <!-- SPA dynamic content (hidden until a route is loaded) -->
-      <div id="spa-content" style="display:none"></div>
+      <div class="platform-stats" id="platformStats">
+        <div class="stat-card">
+          <div class="stat-value" id="statAgents">2</div>
+          <div class="stat-label">Active Agents</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="statStatus">🟢</div>
+          <div class="stat-label">System Status</div>
+        </div>
+      </div>
     </main>
   </div>
 
-  <div id="toast"></div>
   <script src="portal.js"></script>
+  <script>
+    // Mark home as active
+    document.querySelector('[data-page="home"]').classList.add('active');
+  </script>
 </body>
 </html>

@@ -14,34 +14,34 @@
       <button class="sidebar-toggle" id="sidebarToggle">&#9776;</button>
     </div>
     <div class="sidebar-nav">
-      <a href="/#/" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
+      <a href="../index.html" class="nav-item" data-page="home"><span class="nav-icon">🏠</span><span class="nav-label">Home</span></a>
       <div class="nav-section"><div class="nav-section-label">AGENTS</div></div>
       <div class="nav-agent" id="agent-cur">
         <button class="nav-agent-header" onclick="toggleAgent('cur')"><span class="nav-icon">💰</span><span class="nav-label">CUR Analyser</span><span class="nav-chevron">▾</span></button>
         <div class="nav-agent-children" id="agent-cur-children">
-          <a href="/#/cur/chat" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
-          <a href="/#/cur/dashboard" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
-          <a href="/#/cur/reports" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
-          <a href="/#/cur/settings" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
+          <a href="../agents/cur/chat.html" class="nav-child" data-page="cur-chat"><span>💬</span> Chatbot</a>
+          <a href="../agents/cur/dashboard.html" class="nav-child" data-page="cur-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../agents/cur/reports.html" class="nav-child" data-page="cur-reports"><span>📁</span> Reports</a>
+          <a href="../agents/cur/settings.html" class="nav-child" data-page="cur-settings"><span>⚙️</span> Settings</a>
         </div>
       </div>
       <div class="nav-agent" id="agent-alerts">
         <button class="nav-agent-header" onclick="toggleAgent('alerts')"><span class="nav-icon">🚨</span><span class="nav-label">Alert Analyser</span><span class="nav-chevron">▾</span></button>
         <div class="nav-agent-children" id="agent-alerts-children">
-          <a href="/#/alerts/chat" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
-          <a href="/#/alerts/dashboard" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
-          <a href="/#/alerts/reports" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
-          <a href="/#/alerts/settings" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
+          <a href="../agents/alerts/chat.html" class="nav-child" data-page="alerts-chat"><span>💬</span> Chatbot</a>
+          <a href="../agents/alerts/dashboard.html" class="nav-child" data-page="alerts-dashboard"><span>📊</span> Dashboard</a>
+          <a href="../agents/alerts/reports.html" class="nav-child" data-page="alerts-reports"><span>📁</span> Reports</a>
+          <a href="../agents/alerts/settings.html" class="nav-child" data-page="alerts-settings"><span>⚙️</span> Settings</a>
         </div>
       </div>
       <div class="nav-section"><div class="nav-section-label">PLATFORM</div></div>
-      <a href="/#/admin" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
+      <a href="index.html" class="nav-item" data-page="admin"><span class="nav-icon">⚙️</span><span class="nav-label">Admin</span></a>
     </div>
   </nav>
 
   <main class="main-content">
     <div class="page-header">
-      <div class="breadcrumb"><a href="/#/">Home</a> <span>›</span> Admin</div>
+      <div class="breadcrumb"><a href="../index.html">Home</a> <span>›</span> Admin</div>
       <h1 class="page-title">⚙️ Platform Admin</h1>
       <p class="page-subtitle">Manage agents and platform configuration</p>
     </div>
@@ -90,8 +90,8 @@
     <div class="card">
       <div class="card-title">Quick Links</div>
       <div style="display:flex;gap:12px;flex-wrap:wrap">
-        <a href="/#/cur/reports" class="btn btn-primary">💰 Upload CUR Report</a>
-        <a href="/#/alerts/reports" class="btn btn-danger">🚨 Generate Alert Data</a>
+        <a href="../agents/cur/reports.html" class="btn btn-primary">💰 Upload CUR Report</a>
+        <a href="../agents/alerts/reports.html" class="btn btn-danger">🚨 Generate Alert Data</a>
         <a href="http://localhost:8000/docs" target="_blank" class="btn btn-secondary">📖 API Docs</a>
       </div>
     </div>
